@@ -44,7 +44,7 @@ const splitVesting = async() => {
   if (confirm("Confirm transaction")) {
     confirmed.value = true
     try {
-      const coinsToSend = new coins(amount.value * denomination, "uc4e");
+      const coinsToSend = new coins(amount.value, "uc4e");
       const msgSplitVestsing: MsgSplitVesting = {
           amount: coinsToSend,
           fromAddress: userAddress.value,
@@ -88,7 +88,7 @@ const splitVesting = async() => {
         <div v-if="userAddress">
           <h3>Split vesting to new vesting acount: </h3>
           <input v-model="toAddress" type="text" />
-          <h3>Amount to split (C4E): </h3>
+          <h3>Amount to split (uc4e): </h3>
           <input v-model="amount" type="number" />
           <button @click="splitVesting()">Split vesting</button>
         </div>
