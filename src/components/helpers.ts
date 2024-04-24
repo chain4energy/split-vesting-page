@@ -1,7 +1,10 @@
 import {blockchainConfig} from "../blockchainConfig";
 import {ChainInfo} from "@keplr-wallet/types";
 import {AminoConverters} from "@cosmjs/stargate";
-import {MsgSplitVesting} from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
+import {
+    MsgMoveAvailableVesting,
+    MsgSplitVesting
+} from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
 
 export const hexToBytes = (hex): Uint8Array => {
     let bytes = [];
@@ -80,6 +83,17 @@ export interface AminoMsgSplitVesting extends AminoMsg {
     };
 }
 
+export interface AminoMsgMoveAvailableVesting extends AminoMsg {
+    readonly type: "cfevesting/MoveAvailableVesting";
+    readonly value: {
+        /** Bech32 account address */
+        readonly from_address: string;
+        /** Bech32 account address */
+        readonly to_address: string;
+    };
+
+}
+
 export function createVestingAminoConverters(): AminoConverters {
     return {
         "/chain4energy.c4echain.cfevesting.MsgSplitVesting": {
@@ -101,6 +115,23 @@ export function createVestingAminoConverters(): AminoConverters {
                 fromAddress: from_address,
                 toAddress: to_address,
                 amount: [...amount],
+            }),
+        },
+        "/chain4energy.c4echain.cfevesting.MsgMoveAvailableVesting": {
+            aminoType: "cfevesting/MoveAvailableVesting",
+            toAmino: ({
+                          fromAddress,
+                          toAddress,
+                      }: MsgMoveAvailableVesting): AminoMsgMoveAvailableVesting["value"] => ({
+                from_address: fromAddress,
+                to_address: toAddress,
+            }),
+            fromAmino: ({
+                            from_address,
+                            to_address,
+                        }: AminoMsgMoveAvailableVesting["value"]): MsgMoveAvailableVesting => ({
+                fromAddress: from_address,
+                toAddress: to_address,
             }),
         },
     };

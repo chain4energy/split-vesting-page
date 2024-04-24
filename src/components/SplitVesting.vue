@@ -3,26 +3,26 @@ import {ref} from 'vue'
 import {AminoTypes, SigningStargateClient} from "@cosmjs/stargate";
 import {coins, DirectSecp256k1HdWallet} from "@cosmjs/proto-signing";
 import {createKeplrConfig, createVestingAminoConverters, getFees} from "./helpers";
-import {MsgSplitVesting} from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
+import {
+  MsgMoveAvailableVesting,
+  MsgSplitVesting
+} from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
 import {registry} from "../../ts-client";
 import {blockchainConfig} from "../blockchainConfig";
 
-const mnemonic = ref("")
+enum OperationType {
+  split = "split",
+  move = "move"
+}
+
 const userAddress = ref("")
 const amount = ref("")
-const confirmed = ref(false)
+const loader = ref(false)
 const toAddress = ref("")
-
-const denomination = 1000000;
+const operation = ref()
 
 let client:SigningStargateClient
 
-const createEncodedMsg = (objectToEncode: any) => {
-    return {
-        typeUrl: "/chain4energy.c4echain.cfevesting.MsgSplitVesting",
-        value: objectToEncode,
-    };
-}
 declare global { interface Window {keplr:any} }
 
 const connectWithKeplr = async () => {
@@ -42,7 +42,7 @@ const connectWithKeplr = async () => {
 
 const splitVesting = async() => {
   if (confirm("Confirm transaction")) {
-    confirmed.value = true
+    loader.value = true
     try {
       const coinsToSend = new coins(amount.value, "uc4e");
       const msgSplitVestsing: MsgSplitVesting = {
@@ -50,27 +50,74 @@ const splitVesting = async() => {
           fromAddress: userAddress.value,
           toAddress: toAddress.value,
       }
-      const encoded = createEncodedMsg(msgSplitVestsing)
-      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "ABC=")
-      confirmed.value = false
-      if (res.code === 0) {
-        alert("Transaction successful! Splitted "+ coinsToSend[0].amount / denomination +"C4E tokens.")
-      } else {
-        alert("Transaction error! Raw error log:" + res.rawLog)
-      }
+      await signAndBroadcast(createEncodedMsgSplitVesting(msgSplitVestsing))
     } catch (e) {
-      confirmed.value = false
+      loader.value = false
       alert("Error: " + e.toString())
     }
 
   }
 }
 
+const moveAvailableVesting = async() => {
+  if (confirm("Confirm transaction")) {
+    loader.value = true
+    try {
+      const msgMoveAvailableVesting : MsgMoveAvailableVesting= {
+          fromAddress: userAddress.value,
+          toAddress: toAddress.value,
+      }
+      await signAndBroadcast(createEncodedMsgMoveAvailableVesting(msgMoveAvailableVesting))
+    } catch (e) {
+      loader.value = false
+      alert("Error: " + e.toString())
+    }
+  }
+}
+
+
+
+const signAndBroadcast =async  (encoded: any) => {
+  try {
+    const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "ABC=")
+    if (res.code === 0) {
+      loader.value = false
+      alert("Transaction successful!")
+    } else {
+      loader.value = false
+      alert("Transaction error! Raw error log:" + res.rawLog)
+    }
+  } catch (e) {
+    loader.value = false
+    alert("Error: " + e.toString())
+  }
+}
+
+const createEncodedMsgSplitVesting = (objectToEncode: any) => {
+  return {
+    typeUrl: "/chain4energy.c4echain.cfevesting.MsgSplitVesting",
+    value: objectToEncode,
+  };
+}
+
+const createEncodedMsgMoveAvailableVesting = (objectToEncode: any) => {
+  return {
+    typeUrl: "/chain4energy.c4echain.cfevesting.MsgMoveAvailableVesting",
+    value: objectToEncode,
+  };
+}
+
+const chooseOperation = (op: OperationType) => {
+  operation.value = op
+  toAddress.value = ""
+  amount.value = ""
+}
+
 </script>
 
 <template>
   <div id="wrapper">
-    <div v-if="!confirmed">
+    <div v-if="!loader">
       <div class="wrapper">
           <div v-if="userAddress">
               <h3>User address: {{userAddress}}</h3>
@@ -86,23 +133,38 @@ const splitVesting = async() => {
         </div>
 
         <div v-if="userAddress">
-          <h3>Split vesting to new vesting acount: </h3>
-          <input v-model="toAddress" type="text" />
-          <h3>Amount to split (uc4e): </h3>
-          <input v-model="amount" type="number" />
-          <button @click="splitVesting()">Split vesting</button>
+          <div>
+            <h3>Choose operation</h3>
+            <button style="margin-right: 5px" @click="chooseOperation(OperationType.split)">Split vesting</button>
+            <button @click="chooseOperation(OperationType.move)">Move available vesting</button>
+          </div>
+          <hr style="border: 1px solid grey; width: 100%" v-if="operation"/>
+          <div class="centeredDiv" v-if="operation === OperationType.move">
+            <h3>Move available vesting to new account: </h3>
+            <input v-model="toAddress" type="text" />
+            <button @click="moveAvailableVesting()">Move available vesting</button>
+          </div>
+          <div class="centeredDiv" v-if="operation === OperationType.split">
+            <h3>Split vesting to new vesting acount: </h3>
+            <input v-model="toAddress" type="text" />
+            <h3>Amount to split (uc4e): </h3>
+            <input v-model="amount" type="number" />
+            <button @click="splitVesting()">Split vesting</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div v-if="confirmed">
+    <div v-if="loader">
       <h1 style="font-size:45px; text-align: center; padding: 300px 0; margin: 0">Loading...</h1>
     </div>
   </div>
 </template>
 
 <style scoped lang="scss">
-
+:root {
+  font-family: 'Lato', sans-serif;
+}
 
 #wrapper {
   height: 100vh;
@@ -131,8 +193,16 @@ input {
   justify-content: center;
   align-content: center;
   align-items: center;
+}
 
-  div {
+.centeredDiv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+}
+
+.wrapper > div {
     box-shadow: 2px 5px 24px 0px rgba(66, 68, 90, 1);
     margin-top: 10px;
     padding: 10px;
@@ -140,9 +210,8 @@ input {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 400px;
+    width: 600px;
     background: white;
-  }
 }
 
 </style>
