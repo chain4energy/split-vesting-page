@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {ref} from 'vue'
 import {AminoTypes, SigningStargateClient} from "@cosmjs/stargate";
-import {coins, DirectSecp256k1HdWallet} from "@cosmjs/proto-signing";
+import {coins} from "@cosmjs/proto-signing";
 import {createKeplrConfig, createVestingAminoConverters, getFees} from "./helpers";
 import {
   MsgMoveAvailableVesting,
