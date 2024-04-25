@@ -9,6 +9,7 @@ import {
 } from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
 import {registry} from "../../ts-client";
 import {blockchainConfig} from "../blockchainConfig";
+import {customAccountParser} from "./custom_account_parser";
 
 enum OperationType {
   split = "split",
@@ -36,7 +37,7 @@ const connectWithKeplr = async () => {
     client = await SigningStargateClient.connectWithSigner(
         blockchainConfig.rpcUrl,
         offlineSigner,
-        {registry, aminoTypes}
+        {registry, aminoTypes, accountParser: customAccountParser}
     );
 }
 
