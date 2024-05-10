@@ -15,8 +15,8 @@ const userAddress = ref("")
 const amount = ref("100")
 const confirmed = ref(false)
 const toAddress = ref("c4e1yyjfd5cj5nd0jrlvrhc5p3mnkcn8v9q8fdd9gs")
-const duration = ref()
-const vestingPoolName = ref("Vesting pool")
+const duration = ref(7884000)
+const vestingPoolName = ref("PoolOne-" + Math.floor(Math.random() * 1000))
 const denomination = 1000000;
 
 let client: SigningStargateClient
@@ -66,7 +66,7 @@ const splitVesting = async () => {
         toAddress: toAddress.value,
       }
       const encoded = createEncodedMsgSplitVesting(msgSplitVestsing)
-      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "ABC=")
+      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "")
       confirmed.value = false
       if (res.code === 0) {
         alert("Transaction successful! Splitted " + coinsToSend[0].amount / denomination + "C4E tokens.")
@@ -85,19 +85,19 @@ const createVestingPool = async () => {
   if (confirm("Confirm transaction")) {
     confirmed.value = true
     try {
-      const coinsToSend = new coins(amount.value, "uc4e");
       const msgSplitVestsing: MsgCreateVestingPool = {
-        amount: coinsToSend,
+        amount: amount.value,
         duration: {seconds: duration.value, nanos: 0},
         name: vestingPoolName.value,
         owner: userAddress.value,
         vestingType: "Advisors",
       }
-      const encoded = createEncodedMsgSplitVesting(msgSplitVestsing)
-      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "ABC=")
+      console.log(msgSplitVestsing)
+      const encoded = createEncodedMsgCreateVestingPool(msgSplitVestsing)
+      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "")
       confirmed.value = false
       if (res.code === 0) {
-        alert("Transaction successful! Splitted " + coinsToSend[0].amount / denomination + "C4E tokens.")
+        alert("Transaction successful! Created pool " )
       } else {
         alert("Transaction error! Raw error log:" + res.rawLog)
       }
