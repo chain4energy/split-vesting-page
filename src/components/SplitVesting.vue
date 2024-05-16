@@ -15,8 +15,8 @@ const userAddress = ref("")
 const amount = ref("100")
 const confirmed = ref(false)
 const toAddress = ref("c4e1yyjfd5cj5nd0jrlvrhc5p3mnkcn8v9q8fdd9gs")
-const duration = ref(7884000)
-const vestingPoolName = ref("PoolOne-" + Math.floor(Math.random() * 1000))
+const duration = ref(7862400)
+const vestingPoolName = ref("PoolOne-" + Math.floor(Math.random() * 100000))
 const denomination = 1000000;
 
 let client: SigningStargateClient
@@ -96,6 +96,7 @@ const createVestingPool = async () => {
       const encoded = createEncodedMsgCreateVestingPool(msgSplitVestsing)
       const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "")
       confirmed.value = false
+      vestingPoolName.value = "PoolOne-" + Math.floor(Math.random() * 100000)
       if (res.code === 0) {
         alert("Transaction successful! Created pool " )
       } else {
