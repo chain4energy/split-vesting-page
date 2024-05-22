@@ -9,6 +9,8 @@ import {
 } from "../../ts-client/chain4energy.c4echain.cfevesting/types/c4echain/cfevesting/tx";
 import {registry} from "../../ts-client";
 import {blockchainConfig} from "../blockchainConfig";
+import {TxRaw} from "../../ts-client/cosmos.tx.v1beta1";
+import {customAccountParser} from "./custom_account_parser";
 
 const mnemonic = ref("")
 const userAddress = ref("")
@@ -51,7 +53,7 @@ const connectWithKeplr = async () => {
   client = await SigningStargateClient.connectWithSigner(
       blockchainConfig.rpcUrl,
       offlineSigner,
-      {registry, aminoTypes}
+      {registry, aminoTypes, accountParser: customAccountParser}
   );
 }
 
@@ -66,13 +68,35 @@ const splitVesting = async () => {
         toAddress: toAddress.value,
       }
       const encoded = createEncodedMsgSplitVesting(msgSplitVestsing)
-      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "")
-      confirmed.value = false
-      if (res.code === 0) {
-        alert("Transaction successful! Splitted " + coinsToSend[0].amount / denomination + "C4E tokens.")
+
+
+      const txRaw = await client.sign(userAddress.value, [encoded], getFees(), "")
+
+      const txBytes = TxRaw.encode(txRaw).finish();
+      const broadcastTransactionReq = {
+        tx_bytes: Array.from(txBytes), // Converting Uint8Array to array for JSON serialization
+      };
+      const response = await fetch('http://localhost:8090/api/loyalty-drop/v0.1/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(broadcastTransactionReq),
+      });
+
+      // Check the response
+      if (response.ok) {
+        const jsonResponse = await response.json();
+        console.log('Transaction broadcasted successfully:', jsonResponse);
       } else {
-        alert("Transaction error! Raw error log:" + res.rawLog)
+        console.error('Failed to broadcast transaction:', response.status, response.statusText);
       }
+      // confirmed.value = false
+      // if (res.code === 0) {
+      //   alert("Transaction successful! Splitted " + coinsToSend[0].amount / denomination + "C4E tokens.")
+      // } else {
+      //   alert("Transaction error! Raw error log:" + res.rawLog)
+      // }
     } catch (e) {
       confirmed.value = false
       alert("Error: " + e.toString())
@@ -94,14 +118,29 @@ const createVestingPool = async () => {
       }
       console.log(msgSplitVestsing)
       const encoded = createEncodedMsgCreateVestingPool(msgSplitVestsing)
-      const res = await client.signAndBroadcast(userAddress.value, [encoded], getFees(), "")
+
+      const txRaw = await client.sign(userAddress.value, [encoded], getFees(), "")
+      const txBytes = TxRaw.encode(txRaw).finish();
+      const broadcastTransactionReq = {
+        tx_bytes: Array.from(txBytes), // Converting Uint8Array to array for JSON serialization
+      };
+
+
+      const response = await fetch('http://localhost:8090/api/loyalty-drop/v0.1/broadcast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(broadcastTransactionReq),
+      });
       confirmed.value = false
       vestingPoolName.value = "PoolOne-" + Math.floor(Math.random() * 100000)
-      if (res.code === 0) {
-        alert("Transaction successful! Created pool " )
-      } else {
-        alert("Transaction error! Raw error log:" + res.rawLog)
-      }
+      console.log(response)
+      // if (res.code === 0) {
+      //   alert("Transaction successful! Created pool " )
+      // } else {
+      //   alert("Transaction error! Raw error log:" + res.rawLog)
+      // }
     } catch (e) {
       confirmed.value = false
       alert("Error: " + e.toString())

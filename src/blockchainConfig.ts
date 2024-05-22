@@ -4,9 +4,8 @@ export const blockchainConfig = {
   coinDecimals: 6,
   chainId: "veles-dev-test-1",
   addressPrefix: "c4e",
-  // rpcUrl: "https://rpc-dev.c4e.io",
-  rpcUrl: "http://localhost:8090/api/loyalty-drop/v0.1/broadcast",
-  restUrl: "https://lcd-dev.c4e./io/",
+  rpcUrl: "https://rpc-dev.c4e.io",
+  restUrl: "https://lcd-dev.c4e.io/",
   gasPrices: {
     average: 0.025,
     high: 0.03,
